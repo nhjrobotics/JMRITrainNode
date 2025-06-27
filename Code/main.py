@@ -1,14 +1,10 @@
+from usocket import socket
 import json
 from time import sleep, ticks_us
-try:
-    from umqtt.simple import MQTTClient
-except:
-    import mip
-    mip.install("umqtt.simple")
-    from umqtt.simple import MQTTClient
-import neopixel
+from lib.umqtt.simple import MQTTClient
+#import neopixel
 import network
-from machine import Pin, PWM
+from machine import Pin, PWM, SPI
 from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
 from lib.PiicoDev.PiicoDev_Unified import sleep_ms
 import re
@@ -40,7 +36,8 @@ config.load_config('config.json')
 
 global neo
 if config.settings["neopixel_count"] != 0:
-        neo = neopixel.NeoPixel(Pin(config.settings["neopixel_pin"]), config.settings["neopixel_count"])
+    pass
+        #neo = neopixel.NeoPixel(Pin(config.settings["neopixel_pin"]), config.settings["neopixel_count"])
 
 
 def sub_cb(topic, msg):
@@ -98,33 +95,37 @@ def sub_mqtt(mqtt, address):
 
 def connect():
     try:
-        wlan = network.WLAN(network.STA_IF)
-        wlan.disconnect()
-        wlan.active(True)
-        wlan.connect(config.settings["ssid"], config.settings["password"])
-        while wlan.isconnected() == False:
-            print('Waiting for connection to wifi...')
+        spi=SPI(0,2_000_000, mosi=Pin(19),miso=Pin(16),sck=Pin(18))
+        nic = network.WIZNET5K(spi,Pin(17),Pin(20)) #spi,cs,reset pin
+        nic.active(True)
+        #nic.ifconfig(('192.168.168.20','255.255.255.0','192.168.168.1','8.8.8.8'))
+        while not nic.isconnected():
             sleep(1)
-        ip = wlan.ifconfig()[0]
+            print(nic.regs())
+        print(nic.ifconfig())
+        ip = nic.ifconfig()[0]
         print(f'Connected on {ip}')
-        config.settings["ip"] = ip    
-        config.save_config()
+
+    except Exception as e:
+        print(f"Error: Network Connection Failed: {e}")
+        return None, None
+    
+    if nic.isconnected():
         try:
-            if wlan.isconnected() == False:
-                return
             print("Connecting to MQTT Server")
             mqtt = MQTTClient(client_id = config.settings["client_name"], server = config.settings["server_addr"], port = config.settings["MQTT_port"], user = config.settings["MQTT_user"], password = config.settings["MQTT_password"])
             mqtt.connect()
             mqtt.set_callback(sub_cb)
+            print("Connected to MQTT Server")
+
+            return nic, mqtt
         except Exception as e:
-            print(f"Error: Connection Failed: {e}")
+            print(f"Error: MQTT Connection Failed: {e}")
             return None, None
-        print("Connected to MQTT Server")
-        
-        return wlan, mqtt
-    except Exception as e:
-        print(f"Error: Connection Lost: {e}")
-        return None, None
+
+
+
+
     
 
 def servo(device):
@@ -173,8 +174,8 @@ def pin_input(device):
 
 def neopixel_process(device):
     if config.settings["neopixel_count"] != 0:
-        neo[config.devices[device]["args"]["pixel"]] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
-        neo.write()
+        #neo[config.devices[device]["args"]["pixel"]] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
+        #neo.write()
         config.devices[device]["current_state"]["position"] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
         config.save_config()
 
@@ -254,8 +255,8 @@ def process_outputs():
 
 if __name__ == "__main__":
     while True:
-        wlan, mqtt = connect()
-        if wlan == None:
+        net, mqtt = connect()
+        if net == None:
             print("Connection Failed, retrying...")
             continue
         for device in config.devices:
@@ -264,7 +265,7 @@ if __name__ == "__main__":
             print("Subscribed to", config.devices[device]["address"])
 
         counter = 0
-        while wlan.isconnected():
+        while net.isconnected():
             try:
                 start_time = ticks_us()
                 check_mqtt_msg(mqtt)
