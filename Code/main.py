@@ -1,12 +1,11 @@
-from usocket import socket
 import json
-from time import sleep, ticks_us
-from lib.umqtt.simple import MQTTClient
+from time import sleep, ticks_us, sleep_ms
 #import neopixel
+from lib.umqtt.simple import MQTTClient
 import network
 from machine import Pin, PWM, SPI
-from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
-from lib.PiicoDev.PiicoDev_Unified import sleep_ms
+#from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
+#from lib.PiicoDev.PiicoDev_Unified import sleep_ms
 import re
 import user
 
@@ -94,39 +93,32 @@ def sub_mqtt(mqtt, address):
 
 
 def connect():
-    try:
-        spi=SPI(0,2_000_000, mosi=Pin(19),miso=Pin(16),sck=Pin(18))
-        nic = network.WIZNET5K(spi,Pin(17),Pin(20)) #spi,cs,reset pin
-        nic.active(True)
-        #nic.ifconfig(('192.168.168.20','255.255.255.0','192.168.168.1','8.8.8.8'))
+    spi=SPI(0,2_000_000, mosi=Pin(19),miso=Pin(16),sck=Pin(18))
+    nic = network.WIZNET5K(spi,Pin(17),Pin(20)) #spi,cs,reset pin
+    nic.active(True)
+
+    if not nic.isconnected():
+        nic.connect()
+        print("Waiting for connection...")
         while not nic.isconnected():
             sleep(1)
-            print(nic.regs())
-        print(nic.ifconfig())
-        ip = nic.ifconfig()[0]
-        print(f'Connected on {ip}')
 
-    except Exception as e:
-        print(f"Error: Network Connection Failed: {e}")
-        return None, None
-    
+    ip = nic.ifconfig()[0]
+    print(f'Connected on {ip}')
+
     if nic.isconnected():
-        try:
+        ##try:
             print("Connecting to MQTT Server")
             mqtt = MQTTClient(client_id = config.settings["client_name"], server = config.settings["server_addr"], port = config.settings["MQTT_port"], user = config.settings["MQTT_user"], password = config.settings["MQTT_password"])
-            mqtt.connect()
             mqtt.set_callback(sub_cb)
+            mqtt.connect()
             print("Connected to MQTT Server")
 
             return nic, mqtt
-        except Exception as e:
-            print(f"Error: MQTT Connection Failed: {e}")
-            return None, None
+        ##except Exception as e:
+        ##   print(f"Error: MQTT Connection Failed: {e}")
+    return None, None
 
-
-
-
-    
 
 def servo(device):
     servo = PWM(Pin(config.devices[device]["args"]["pin"]))
@@ -181,6 +173,8 @@ def neopixel_process(device):
 
 
 def rfid_process(device):
+    pass
+    '''
     rfid = PiicoDev_RFID(sda=Pin(config.devices[device]["args"]["sda"]), 
                          scl=Pin(config.devices[device]["args"]["scl"]), 
                          asw=config.devices[device]["args"]["asw_address"],
@@ -196,6 +190,7 @@ def rfid_process(device):
             while(rfid.readID() != ''):
                 if ticks_us() - timeout_start > (1000 * config.settings["device_poll_timeout_ms"]):
                     return
+    '''
 
 
 def button(device):
@@ -268,7 +263,7 @@ if __name__ == "__main__":
         while net.isconnected():
             try:
                 start_time = ticks_us()
-                check_mqtt_msg(mqtt)
+                #check_mqtt_msg(mqtt)
                 user.custom_node_functions(config.devices)
                 process_inputs()
                 process_outputs()
@@ -276,6 +271,7 @@ if __name__ == "__main__":
                 if counter == 10000:
                     config.settings["cycle_time"] = finish_time - start_time
                     mqtt_address = str(config.settings["client_name"]) + "/" + "cycle_time"
+                    print("publishing ", mqtt_address)
                     publish_mqtt(mqtt, mqtt_address, str(config.settings["cycle_time"]))
                     counter = 0
                 counter += 1 

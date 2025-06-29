@@ -1,11 +1,9 @@
 {
     "settings": {
-        "ssid": "####",
-        "password": "####",
-        "server_addr": "####",
+        "server_addr": "192.168.168.240",
         "client_name": "TrainNode",
-        "MQTT_user": "####",
-        "MQTT_password": "####",
+        "MQTT_user": "mqtt-user",
+        "MQTT_password": "9te%BM3u$ps77dMoR$B7@DJyBZ",
         "MQTT_port": 1883,
         "ip": "####",
         "debug": true,
@@ -17,7 +15,7 @@
 
     "devices": {
             "1": {
-                "address": "jmri/track/sensor/0",
+                "address": "pastrains/track/sensor/0",
                 "current_state": {
                     "state": "INACTIVE",
                     "position": 1
@@ -36,7 +34,7 @@
                 }
             },
             "2": {
-                "address": "jmri/track/turnout/1",
+                "address": "pastrains/track/turnout/1",
                 "current_state": {
                     "state": "CLOSED",
                     "position": 2000
@@ -55,7 +53,7 @@
                 }
             },
             "3": {
-                "address": "jmri/track/turnout/2",
+                "address": "pastrains/track/turnout/2",
                 "current_state": {
                     "state": "CLOSED",
                     "position": 2000
@@ -74,7 +72,7 @@
                 }
             },
             "4": {
-                "address": "jmri/track/sensor/1",
+                "address": "pastrains/track/sensor/1",
                 "current_state": {
                     "state": "INACTIVE",
                     "position": 0
@@ -92,7 +90,7 @@
                 }
             },
             "5": {
-                "address": "jmri/track/turnout/3",
+                "address": "pastrains/track/turnout/3",
                 "current_state": {
                     "state": "CLOSED",
                     "position": 0
@@ -108,7 +106,7 @@
                 }
             },
             "6": {
-                "address": "jmri/track/reporter/0",
+                "address": "pastrains/track/reporter/0",
                 "current_state": {
                     "state": "NULL"      
                 },
