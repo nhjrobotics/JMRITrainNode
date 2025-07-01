@@ -81,7 +81,8 @@ def sub_cb(topic, msg):
     
 
 def check_mqtt_msg(mqtt):
-    mqtt.check_msg()
+    for device in config.devices:
+        sub_mqtt(mqtt, config.devices[device]["address"])
 
 
 def publish_mqtt(mqtt, address, msg):
@@ -249,32 +250,27 @@ def process_outputs():
 
 
 if __name__ == "__main__":
+    count = 0
     while True:
-        net, mqtt = connect()
-        if net == None:
-            print("Connection Failed, retrying...")
-            continue
-        for device in config.devices:
-            device_num = str(device)
-            sub_mqtt(mqtt, config.devices[device]["address"])
-            print("Subscribed to", config.devices[device]["address"])
+        try:
+            net, mqtt = connect()
+            for device in config.devices:
+                sub_mqtt(mqtt, config.devices[device]["address"])
+                print("Subscribed to", config.devices[device]["address"])
+        except Exception as e:
+                print(f"Attempt {count + 1}/{config.settings["max_connect_attempts"]} - Error: Connection Lost: {e}")
+                count += 1
+                if count == config.settings["max_connect_attempts"]:
+                    break
+                continue
 
-        counter = 0
-        while net.isconnected():
-            try:
-                start_time = ticks_us()
-                #check_mqtt_msg(mqtt)
+        while net != None and net.isconnected():
+            try: 
+                publish_mqtt(mqtt, config.settings["client_name"], "HEARTBEAT")
+                print(config.settings["client_name"], "HEARTBEAT")
                 user.custom_node_functions(config.devices)
                 process_inputs()
                 process_outputs()
-                finish_time = ticks_us()
-                if counter == 10000:
-                    config.settings["cycle_time"] = finish_time - start_time
-                    mqtt_address = str(config.settings["client_name"]) + "/" + "cycle_time"
-                    print("publishing ", mqtt_address)
-                    publish_mqtt(mqtt, mqtt_address, str(config.settings["cycle_time"]))
-                    counter = 0
-                counter += 1 
             except Exception as e:
-                print(f"Error: Connection Lost: {e}")
+                print(f"Error: Input / Output Processing Failed: {e}")
                 break

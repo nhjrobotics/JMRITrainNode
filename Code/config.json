@@ -10,7 +10,8 @@
         "cycle_time": 1000,
         "neopixel_pin": 15,
         "neopixel_count": 1,
-        "device_poll_timeout_ms": 1000
+        "device_poll_timeout_ms": 1000,
+        "max_connect_attempts": 1
     },
 
     "devices": {
@@ -48,7 +49,7 @@
                 "args": {
                     "freq": 50,
                     "pin": 1,
-                    "ramp": true,
+                    "ramp": false,
                     "step": 500
                 }
             },
@@ -67,7 +68,7 @@
                 "args": {
                     "freq": 50,
                     "pin": 2,
-                    "ramp": true,
+                    "ramp": false,
                     "step": 500
                 }
             },
