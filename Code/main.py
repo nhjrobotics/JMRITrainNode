@@ -1,6 +1,5 @@
 import json
 from time import sleep, ticks_us, sleep_ms
-#import neopixel
 from lib.umqtt.simple import MQTTClient
 import network
 from machine import Pin, PWM, SPI
