@@ -129,12 +129,16 @@ def pin_input(mqtt: MQTT_handler, config: config_manager, device):
 
 class neopixel:
     def __init__(self, config):
-        self.neo = ws2812_array(config.settings["neopixel_count"], config.settings["neopixel_pin"])
+        self.config = config
+        self.neo = None
+        if config.settings["neopixel_count"] != 0:
+            self.neo = ws2812_array(config.settings["neopixel_count"], config.settings["neopixel_pin"])
 
-    def process(self, device, config):
-        self.neo.pixels_set(config.devices[device]["args"]["pixel"], config.devices[device]["states"][config.devices[device]["current_state"]["state"]])
-        self.neo.pixels_show()
-        config.devices[device]["current_state"]["position"] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
+    def process(self, device):
+        if self.neo != None:
+            self.neo.pixels_set(config.devices[device]["args"]["pixel"], config.devices[device]["states"][config.devices[device]["current_state"]["state"]])
+            self.neo.pixels_show()
+            config.devices[device]["current_state"]["position"] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
 
 
 def rfid_process(mqtt: MQTT_handler, config: config_manager, device):
@@ -199,7 +203,7 @@ def process_inputs(mqtt: MQTT_handler, config: config_manager):
                 pin_input(mqtt, config, device)
 
 
-def process_outputs(config: config_manager):
+def process_outputs(config: config_manager, neo:neopixel):
     for device in config.devices:
         if config.devices[device]["io"] == "OUTPUT":
             position = config.devices[device]["current_state"]["position"]
@@ -211,17 +215,15 @@ def process_outputs(config: config_manager):
                 elif config.devices[device]["type"] == "pin_output":
                     pin_output(config, device)
                 elif config.devices[device]["type"] == "neopixel":
-                    neo(config, device)
+                    neo.process(device)
 
 
 if __name__ == "__main__":
-    attempt = 0
-
     config = config_manager()
     config.load_config('config.json')
+    neo = neopixel(config)
 
-    if config.settings["neopixel_count"] != 0:
-        neo = ws2812_array(config.settings["neopixel_count"], config.settings["neopixel_pin"])
+    attempt = 0
 
     while True:
         print("TrainNode by NHJRobotics... Initialising")
@@ -244,7 +246,7 @@ if __name__ == "__main__":
                 print(config.settings["client_name"], "HEARTBEAT")
                 user.custom_node_functions(config.devices)
                 process_inputs(mqtt, config)
-                process_outputs(config)
+                process_outputs(config, neo)
                 config.save_config()
             except Exception as e:
                 print(f"Error: Input / Output Processing Failed: {e}")
