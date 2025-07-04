@@ -1,6 +1,5 @@
 Testing/
 Code/config.json
-Code/.vscode
-Code/.micropico
+*.micropico
 *.uf2
 *.vscode
