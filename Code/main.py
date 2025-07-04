@@ -28,14 +28,6 @@ class config_manager:
         return 
 
 
-global config
-config = config_manager()
-config.load_config('config.json')
-
-global neo
-if config.settings["neopixel_count"] != 0:
-    neo = ws2812_array(config.settings["neopixel_count"], config.settings["neopixel_pin"])
-
 
 def sub_cb(topic, msg):
     if topic.decode() == config.settings["client_name"] + "/client_name":
@@ -248,6 +240,13 @@ def process_outputs():
 
 if __name__ == "__main__":
     attempt = 0
+
+    config = config_manager()
+    config.load_config('config.json')
+
+    if config.settings["neopixel_count"] != 0:
+        neo = ws2812_array(config.settings["neopixel_count"], config.settings["neopixel_pin"])
+
     while True:
         print("TrainNode by NHJRobotics... Initialising")
         print(f"Client name: {config.settings["client_name"]}")
