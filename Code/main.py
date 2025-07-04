@@ -218,11 +218,11 @@ def process_outputs(config: config_manager, neo:neopixel):
                     neo.process(device)
 
 
+
 if __name__ == "__main__":
     config = config_manager()
     config.load_config('config.json')
     neo = neopixel(config)
-
     attempt = 0
 
     while True:
@@ -232,6 +232,7 @@ if __name__ == "__main__":
             net, mqtt = connect(config)
             for device in config.devices:
                 mqtt.sub(config.devices[device]["address"])
+
                 print("Subscribed to", config.devices[device]["address"])
         except Exception as e:
                 print(f"Attempt {attempt + 1}/{config.settings["max_ip_connect_attempts"]} - Error: Connection Lost: {e}")
@@ -240,6 +241,7 @@ if __name__ == "__main__":
                     break
                 continue
 
+                
         while net.isconnected():
             try: 
                 mqtt.pub(config.settings["client_name"], "HEARTBEAT")
@@ -251,3 +253,4 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Error: Input / Output Processing Failed: {e}")
                 break
+                
