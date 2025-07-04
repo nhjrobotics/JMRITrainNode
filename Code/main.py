@@ -3,6 +3,7 @@ from time import sleep, ticks_us, sleep_ms
 from lib.umqtt.simple import MQTTClient
 import network
 from machine import Pin, PWM, SPI
+from lib.neopixel.ws2812lib import ws2812_array
 #from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
 #from lib.PiicoDev.PiicoDev_Unified import sleep_ms
 import re
@@ -34,8 +35,7 @@ config.load_config('config.json')
 
 global neo
 if config.settings["neopixel_count"] != 0:
-    pass
-        #neo = neopixel.NeoPixel(Pin(config.settings["neopixel_pin"]), config.settings["neopixel_count"])
+    neo = ws2812_array(config.settings["neopixel_count"], config.settings["neopixel_pin"])
 
 
 def sub_cb(topic, msg):
@@ -107,16 +107,12 @@ def connect():
     print(f'Connected on {ip}')
 
     if nic.isconnected():
-        ##try:
-            print("Connecting to MQTT Server")
-            mqtt = MQTTClient(client_id = config.settings["client_name"], server = config.settings["server_addr"], port = config.settings["MQTT_port"], user = config.settings["MQTT_user"], password = config.settings["MQTT_password"])
-            mqtt.set_callback(sub_cb)
-            mqtt.connect()
-            print("Connected to MQTT Server")
-
-            return nic, mqtt
-        ##except Exception as e:
-        ##   print(f"Error: MQTT Connection Failed: {e}")
+        print("Connecting to MQTT Server")
+        mqtt = MQTTClient(client_id = config.settings["client_name"], server = config.settings["server_addr"], port = config.settings["MQTT_port"], user = config.settings["MQTT_user"], password = config.settings["MQTT_password"])
+        mqtt.set_callback(sub_cb)
+        mqtt.connect()
+        print("Connected to MQTT Server")
+        return nic, mqtt
     return None, None
 
 
@@ -166,8 +162,8 @@ def pin_input(device):
 
 def neopixel_process(device):
     if config.settings["neopixel_count"] != 0:
-        #neo[config.devices[device]["args"]["pixel"]] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
-        #neo.write()
+        neo.pixels_set(config.devices[device]["args"]["pixel"], config.devices[device]["states"][config.devices[device]["current_state"]["state"]])
+        neo.pixels_show()
         config.devices[device]["current_state"]["position"] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
         config.save_config()
 
