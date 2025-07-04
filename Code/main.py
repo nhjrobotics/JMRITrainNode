@@ -162,7 +162,6 @@ def rfid_process(mqtt: MQTT_handler, config: config_manager, device):
                     return
 
 
-
 def button(mqtt: MQTT_handler, config: config_manager, device):
     if config.devices[device]["args"]["pullup"]:
         pin = Pin(config.devices[device]["args"]["pin"], Pin.IN, Pin.PULL_UP)
@@ -217,7 +216,6 @@ def process_outputs(config: config_manager, neo:neopixel):
                     neo.process(device)
 
 
-
 if __name__ == "__main__":
     config = config_manager()
     config.load_config('config.json')
@@ -239,8 +237,7 @@ if __name__ == "__main__":
                 if attempt == config.settings["max_ip_connect_attempts"]:
                     break
                 continue
-
-                
+              
         while net.isconnected():
             try: 
                 mqtt.pub(config.settings["client_name"], "HEARTBEAT")
@@ -252,4 +249,3 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Error: Input / Output Processing Failed: {e}")
                 break
-                
