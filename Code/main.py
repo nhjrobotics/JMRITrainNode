@@ -5,7 +5,6 @@ import network
 from machine import Pin, PWM, SPI
 from lib.neopixel.ws2812lib import ws2812_array
 from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
-import re
 import user
 
 
@@ -48,7 +47,6 @@ def connect(config):
     return nic, mqtt
 
 
-
 class MQTT_handler:
     def __init__(self, config):
         self.config = config
@@ -74,7 +72,6 @@ class MQTT_handler:
             for state in device["states"]:
                 if msg.decode() == state:
                     device["current_state"]["state"] = state
-                    self.config.save_config()
                     print(device["type"], device["address"], device["current_state"]["state"], device["states"][device["current_state"]["state"]])
                     return
             print(f"{msg.decode()}: invalid state, no change:", device["type"], device["address"], device["current_state"]["state"], device["states"][device["current_state"]["state"]])
@@ -89,7 +86,7 @@ class MQTT_handler:
         self.mqtt.subscribe(address)
 
 
-def servo(device):
+def servo(config: config_manager, device):
     servo = PWM(Pin(config.devices[device]["args"]["pin"]))
     servo.freq(config.devices[device]["args"]["freq"])
     if config.devices[device]["args"]["ramp"]:
@@ -102,17 +99,15 @@ def servo(device):
     else:
         config.devices[device]["current_state"]["position"] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
     servo.duty_u16(config.devices[device]["current_state"]["position"])
-    config.save_config()
 
 
-def pin_output(device):
+def pin_output(config: config_manager, device):
     pin = Pin(config.devices[device]["args"]["pin"], Pin.OUT)
     pin.value(config.devices[device]["states"][config.devices[device]["current_state"]["state"]])
     config.devices[device]["current_state"]["position"] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
-    config.save_config()
 
 
-def pin_input(device):
+def pin_input(mqtt: MQTT_handler, config: config_manager, device):
     if config.devices[device]["args"]["pullup"]:
         pin = Pin(config.devices[device]["args"]["pin"], Pin.IN, Pin.PULL_UP)
     else:
@@ -128,9 +123,8 @@ def pin_input(device):
         pin_check = pin.value()
         if pin_check == state:
             config.devices[device]["current_state"]["state"] = state_to_set
-            publish_mqtt(mqtt, config.devices[device]["address"], state_to_set)
+            mqtt.pub(config.devices[device]["address"], state_to_set)
             print(config.devices[device]["type"], config.devices[device]["address"], config.devices[device]["current_state"]["state"])
-            config.save_config()
 
 
 class neopixel:
@@ -141,11 +135,9 @@ class neopixel:
         self.neo.pixels_set(config.devices[device]["args"]["pixel"], config.devices[device]["states"][config.devices[device]["current_state"]["state"]])
         self.neo.pixels_show()
         config.devices[device]["current_state"]["position"] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
-        config.save_config()
 
 
-
-def rfid_process(device):
+def rfid_process(mqtt: MQTT_handler, config: config_manager, device):
     try:
         rfid = PiicoDev_RFID(sda=Pin(config.devices[device]["args"]["sda"]), 
                          scl=Pin(config.devices[device]["args"]["scl"]), 
@@ -159,9 +151,8 @@ def rfid_process(device):
         id = rfid.readID()
         if id != '':
             config.devices[device]["current_state"]["state"] = id
-            config.save_config()
             print(config.devices[device]["type"], config.devices[device]["address"], config.devices[device]["current_state"]["state"])
-            publish_mqtt(mqtt, config.devices[device]["address"], config.devices[device]["current_state"]["state"])           
+            mqtt.pub(config.devices[device]["address"], config.devices[device]["current_state"]["state"])           
             timeout_start = ticks_us()
             while(rfid.readID() != ''):
                 if ticks_us() - timeout_start > (1000 * config.settings["device_poll_timeout_ms"]):
@@ -169,7 +160,7 @@ def rfid_process(device):
 
 
 
-def button(device):
+def button(mqtt: MQTT_handler, config: config_manager, device):
     if config.devices[device]["args"]["pullup"]:
         pin = Pin(config.devices[device]["args"]["pin"], Pin.IN, Pin.PULL_UP)
     else:
@@ -186,9 +177,8 @@ def button(device):
                         state_to_set = button_state
 
                         config.devices[device]["current_state"]["state"] = state_to_set
-                        publish_mqtt(mqtt, config.devices[device]["address"], state_to_set)
+                        mqtt.pub(config.devices[device]["address"], state_to_set)
                         print(config.devices[device]["type"], config.devices[device]["address"], config.devices[device]["current_state"]["state"])
-                        config.save_config()
                         timeout_start = ticks_us()
                         while pin.value() == config.devices[device]["args"]["button_trig"]:
                             if ticks_us() - timeout_start > (1000 * config.settings["device_poll_timeout_ms"]):
@@ -198,18 +188,18 @@ def button(device):
                 print(f"Error: too many states in device {device} for button object")
 
 
-def process_inputs():
+def process_inputs(mqtt: MQTT_handler, config: config_manager):
     for device in config.devices:
         if config.devices[device]["io"] == "INPUT":
             if config.devices[device]["type"] == "rfid":
-                rfid_process(device)
+                rfid_process(mqtt, config, device)
             elif config.devices[device]["type"] == "button":
-                button(device)
+                button(mqtt, config, device)
             elif config.devices[device]["type"] == "pin_input":
-                pin_input(device)
+                pin_input(mqtt, config, device)
 
 
-def process_outputs():
+def process_outputs(config: config_manager):
     for device in config.devices:
         if config.devices[device]["io"] == "OUTPUT":
             position = config.devices[device]["current_state"]["position"]
@@ -217,11 +207,11 @@ def process_outputs():
                 print(config.devices[device]["address"], config.devices[device]["current_state"]["state"], "position", config.devices[device]["current_state"]["position"], "to", config.devices[device]["states"][config.devices[device]["current_state"]["state"]])
 
                 if config.devices[device]["type"] == "servo":
-                    servo(device)
+                    servo(config, device)
                 elif config.devices[device]["type"] == "pin_output":
-                    pin_output(device)
+                    pin_output(config, device)
                 elif config.devices[device]["type"] == "neopixel":
-                    neopixel_process(device)
+                    neo(config, device)
 
 
 if __name__ == "__main__":
@@ -237,9 +227,9 @@ if __name__ == "__main__":
         print("TrainNode by NHJRobotics... Initialising")
         print(f"Client name: {config.settings["client_name"]}")
         try:
-            net, mqtt = connect()
+            net, mqtt = connect(config)
             for device in config.devices:
-                sub_mqtt(mqtt, config.devices[device]["address"])
+                mqtt.sub(config.devices[device]["address"])
                 print("Subscribed to", config.devices[device]["address"])
         except Exception as e:
                 print(f"Attempt {attempt + 1}/{config.settings["max_ip_connect_attempts"]} - Error: Connection Lost: {e}")
@@ -250,11 +240,12 @@ if __name__ == "__main__":
 
         while net != None and net.isconnected():
             try: 
-                publish_mqtt(mqtt, config.settings["client_name"], "HEARTBEAT")
+                mqtt.pub(config.settings["client_name"], "HEARTBEAT")
                 print(config.settings["client_name"], "HEARTBEAT")
                 user.custom_node_functions(config.devices)
-                process_inputs()
-                process_outputs()
+                process_inputs(mqtt, config)
+                process_outputs(config)
+                config.save_config()
             except Exception as e:
                 print(f"Error: Input / Output Processing Failed: {e}")
                 break
