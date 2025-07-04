@@ -29,61 +29,7 @@ class config_manager:
 
 
 
-def sub_cb(topic, msg):
-    if topic.decode() == config.settings["client_name"] + "/client_name":
-        print("Changing client name to", msg.decode())
-        config.settings["client_name"] = msg.decode()
-        config.save_config()
-        return 
-    
-    elif config.settings["client_name"] in topic.decode():
-        decoded_topic = re.sub(config.settings["client_name"] + "/", "", topic.decode())
-        device_num = decoded_topic.split("/")[0]
-        setting = decoded_topic.split("/")[1]
-        print("device_num", device_num, "setting", setting, "to", msg.decode())
-
-        try:
-            json_object = json.loads(msg.decode())
-            config.devices[device_num][setting] = json_object
-        except:
-            config.devices[device_num][setting] = msg.decode()
-        config.save_config()
-        return
-
-    device = None
-    for potential_device in config.devices:
-        if config.devices[potential_device]["address"] == topic.decode():
-            device = config.devices[potential_device]
-            break
-    
-    if device == None:
-        return
-    
-    if device["current_state"]["state"] != msg.decode():
-        for state in device["states"]:
-            if msg.decode() == state:
-                device["current_state"]["state"] = state
-                config.save_config()
-                print(device["type"], device["address"], device["current_state"]["state"], device["states"][device["current_state"]["state"]])
-                return
-        print(f"{msg.decode()}: invalid state, no change:", device["type"], device["address"], device["current_state"]["state"], device["states"][device["current_state"]["state"]])
-        return
-    
-
-def check_mqtt_msg(mqtt):
-    for device in config.devices:
-        sub_mqtt(mqtt, config.devices[device]["address"])
-
-
-def publish_mqtt(mqtt, address, msg):
-    mqtt.publish(address, msg, qos=1)
-
-
-def sub_mqtt(mqtt, address):
-    mqtt.subscribe(address)
-
-
-def connect():
+def connect(config):
     spi=SPI(0,2_000_000, mosi=Pin(19),miso=Pin(16),sck=Pin(18))
     nic = network.WIZNET5K(spi,Pin(17),Pin(20)) #spi,cs,reset pin
     nic.active(True)
@@ -97,14 +43,50 @@ def connect():
     ip = nic.ifconfig()[0]
     print(f'Connected on {ip}')
 
-    if nic.isconnected():
+    mqtt = MQTT_handler(config)
+
+    return nic, mqtt
+
+
+
+class MQTT_handler:
+    def __init__(self, config):
+        self.config = config
+        
         print("Connecting to MQTT Server")
-        mqtt = MQTTClient(client_id = config.settings["client_name"], server = config.settings["server_addr"], port = config.settings["MQTT_port"], user = config.settings["MQTT_user"], password = config.settings["MQTT_password"])
-        mqtt.set_callback(sub_cb)
-        mqtt.connect()
+        self.mqtt = MQTTClient(client_id = config.settings["client_name"], server = config.settings["server_addr"], port = config.settings["MQTT_port"], user = config.settings["MQTT_user"], password = config.settings["MQTT_password"])
+        self.mqtt.set_callback(self.sub_cb)
+        self.mqtt.connect()
         print("Connected to MQTT Server")
-        return nic, mqtt
-    return None, None
+
+
+    def sub_cb(self, topic, msg):
+        device = None
+        for potential_device in self.config.devices:
+            if self.config.devices[potential_device]["address"] == topic.decode():
+                device = self.config.devices[potential_device]
+                break
+    
+        if device == None:
+            return
+    
+        if device["current_state"]["state"] != msg.decode():
+            for state in device["states"]:
+                if msg.decode() == state:
+                    device["current_state"]["state"] = state
+                    self.config.save_config()
+                    print(device["type"], device["address"], device["current_state"]["state"], device["states"][device["current_state"]["state"]])
+                    return
+            print(f"{msg.decode()}: invalid state, no change:", device["type"], device["address"], device["current_state"]["state"], device["states"][device["current_state"]["state"]])
+            return
+
+
+    def pub(self, address, msg):
+        self.mqtt.publish(address, msg, qos=1)
+
+
+    def sub(self, address):
+        self.mqtt.subscribe(address)
 
 
 def servo(device):
@@ -151,12 +133,16 @@ def pin_input(device):
             config.save_config()
 
 
-def neopixel_process(device):
-    if config.settings["neopixel_count"] != 0:
-        neo.pixels_set(config.devices[device]["args"]["pixel"], config.devices[device]["states"][config.devices[device]["current_state"]["state"]])
-        neo.pixels_show()
+class neopixel:
+    def __init__(self, config):
+        self.neo = ws2812_array(config.settings["neopixel_count"], config.settings["neopixel_pin"])
+
+    def process(self, device, config):
+        self.neo.pixels_set(config.devices[device]["args"]["pixel"], config.devices[device]["states"][config.devices[device]["current_state"]["state"]])
+        self.neo.pixels_show()
         config.devices[device]["current_state"]["position"] = config.devices[device]["states"][config.devices[device]["current_state"]["state"]]
         config.save_config()
+
 
 
 def rfid_process(device):
