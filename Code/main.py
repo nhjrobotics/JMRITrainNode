@@ -4,8 +4,7 @@ from lib.umqtt.simple import MQTTClient
 import network
 from machine import Pin, PWM, SPI
 from lib.neopixel.ws2812lib import ws2812_array
-#from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
-#from lib.PiicoDev.PiicoDev_Unified import sleep_ms
+from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
 import re
 import user
 
@@ -169,12 +168,15 @@ def neopixel_process(device):
 
 
 def rfid_process(device):
-    pass
-    '''
-    rfid = PiicoDev_RFID(sda=Pin(config.devices[device]["args"]["sda"]), 
+    try:
+        rfid = PiicoDev_RFID(sda=Pin(config.devices[device]["args"]["sda"]), 
                          scl=Pin(config.devices[device]["args"]["scl"]), 
                          asw=config.devices[device]["args"]["asw_address"],
                          bus=config.devices[device]["args"]["bus"])
+    except Exception as e:
+        print(f"Error: RFID Processing Failed: {e}")
+        return
+
     if rfid.tagPresent():
         id = rfid.readID()
         if id != '':
@@ -186,7 +188,7 @@ def rfid_process(device):
             while(rfid.readID() != ''):
                 if ticks_us() - timeout_start > (1000 * config.settings["device_poll_timeout_ms"]):
                     return
-    '''
+
 
 
 def button(device):
@@ -245,17 +247,19 @@ def process_outputs():
 
 
 if __name__ == "__main__":
-    count = 0
+    attempt = 0
     while True:
+        print("TrainNode by NHJRobotics... Initialising")
+        print(f"Client name: {config.settings["client_name"]}")
         try:
             net, mqtt = connect()
             for device in config.devices:
                 sub_mqtt(mqtt, config.devices[device]["address"])
                 print("Subscribed to", config.devices[device]["address"])
         except Exception as e:
-                print(f"Attempt {count + 1}/{config.settings["max_connect_attempts"]} - Error: Connection Lost: {e}")
-                count += 1
-                if count == config.settings["max_connect_attempts"]:
+                print(f"Attempt {attempt + 1}/{config.settings["max_ip_connect_attempts"]} - Error: Connection Lost: {e}")
+                attempt += 1
+                if attempt == config.settings["max_ip_connect_attempts"]:
                     break
                 continue
 

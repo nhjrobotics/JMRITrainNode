@@ -1,4 +1,5 @@
 Testing/
-Code/config.py
+Code/config.json
 Code/.vscode
 Code/.micropico
+*.uf2
