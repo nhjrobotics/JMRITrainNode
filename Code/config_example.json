@@ -1,9 +1,9 @@
 {
     "settings": {
-        "server_addr": "192.168.168.240",
+        "server_addr": "10.1.1.100",
         "client_name": "TrainNode",
-        "MQTT_user": "mqtt-user",
-        "MQTT_password": "9te%BM3u$ps77dMoR$B7@DJyBZ",
+        "MQTT_user": "user",
+        "MQTT_password": "password",
         "MQTT_port": 1883,
         "neopixel_pin": 15,
         "neopixel_count": 1,
@@ -13,7 +13,7 @@
 
     "devices": {
             "1": {
-                "address": "pastrains/track/sensor/0",
+                "address": "jmri/track/sensor/0",
                 "current_state": {
                     "state": "INACTIVE",
                     "position": 1
@@ -32,7 +32,7 @@
                 }
             },
             "2": {
-                "address": "pastrains/track/sensor/1",
+                "address": "jmri/track/sensor/1",
                 "current_state": {
                     "state": "INACTIVE",
                     "position": 0
@@ -50,7 +50,7 @@
                 }
             },
             "3": {
-                "address": "pastrains/track/turnout/1",
+                "address": "jmri/track/turnout/1",
                 "current_state": {
                     "state": "CLOSED",
                     "position": 2000
@@ -69,7 +69,7 @@
                 }
             },
             "4": {
-                "address": "pastrains/track/turnout/2",
+                "address": "jmri/track/turnout/2",
                 "current_state": {
                     "state": "CLOSED",
                     "position": 2000
@@ -88,7 +88,7 @@
                 }
             },
             "5": {
-                "address": "pastrains/track/turnout/3",
+                "address": "jmri/track/turnout/3",
                 "current_state": {
                     "state": "CLOSED",
                     "position": 0
@@ -104,7 +104,7 @@
                 }
             },
             "6": {
-                "address": "pastrains/track/reporter/0",
+                "address": "jmri/track/reporter/0",
                 "current_state": {
                     "state": "NULL"      
                 },
@@ -118,7 +118,7 @@
                 }
             },
             "7": {
-                "address": "pastrains/track/reporter/1",
+                "address": "jmri/track/reporter/1",
                 "current_state": {
                     "state": "NULL"      
                 },
@@ -132,7 +132,7 @@
                 }
             },
             "8": {
-                "address": "pastrains/track/turnout/4",
+                "address": "jmri/track/turnout/4",
                 "current_state": {
                     "state": "CLOSED",
                     "position": 0
