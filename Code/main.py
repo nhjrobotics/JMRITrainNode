@@ -240,7 +240,7 @@ if __name__ == "__main__":
                     break
                 continue
 
-        while net != None and net.isconnected():
+        while net.isconnected():
             try: 
                 mqtt.pub(config.settings["client_name"], "HEARTBEAT")
                 print(config.settings["client_name"], "HEARTBEAT")
