@@ -5,7 +5,7 @@ import network
 from machine import Pin, PWM, SPI
 from lib.neopixel.ws2812lib import ws2812_array
 from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
-import user
+import user_functions
 
 
 class config_manager:
@@ -25,7 +25,6 @@ class config_manager:
         with open(self.filename, 'w') as json_file:
             json_file.write(json.dumps(self.config))
         return 
-
 
 
 def connect(config):
@@ -246,7 +245,7 @@ if __name__ == "__main__":
             try: 
                 mqtt.pub(config.settings["client_name"], "HEARTBEAT")
                 print(config.settings["client_name"], "HEARTBEAT")
-                user.custom_node_functions(config.devices)
+                user_functions.custom_node_functions(config.devices)
                 process_inputs(mqtt, config)
                 process_outputs(config, neo)
                 config.save_config()
