@@ -8,8 +8,8 @@ TrainNode is a JMRI compatible I/O controller built on the MQTT protocol. Using 
 - To use TrainNode, you must have a MQTT server with username and password authentication connected to JMRI ([JMRI + MQTT](https://www.jmri.org/help/en/html/hardware/mqtt/index.shtml)), additionally you must have access to WIFI in close proximity to your layout for optimal performance. It is recommended to use Eclipse Mosquitto as your MQTT broker.
 - To install TrainNode on the Rpi Pico W, install MicroPython for Pico-W ([MicroPython](https://micropython.org/download/RPI_PICO_W/)).
 - Next, configure the TrainNode [config.py](https://github.com/rewind2b4/JMRITrainNode/tree/master/Code/config.py) file (see Docs for more info). 
-- Finally, copy the 4 files from the [code](https://github.com/rewind2b4/JMRITrainNode/tree/master/Code) folder to the Pico.
-- The Pico-W will automatically connect to the internet through the installation WIFI connection, download the required dependencies, and then restart, connecting to the layout MQTT broker through the layout WIFI connection (for layout networks that are disconnected from internet).
+- Finally, copy the files from the [code](https://github.com/rewind2b4/JMRITrainNode/tree/master/Code) folder to the Pico.
+- The Pico will automatically connect to the internet through the installation WIFI connection, download the required dependencies, and then restart, connecting to the layout MQTT broker through the layout WIFI connection (for layout networks that are disconnected from internet).
 
 ## Docs
 Network / MQTT Settings
