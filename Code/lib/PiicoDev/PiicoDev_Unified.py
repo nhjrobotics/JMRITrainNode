@@ -1,13 +1,3 @@
-'''
-PiicoDev.py: Unifies I2C drivers for different builds of MicroPython
-Changelog:
-    - 2021       M.Ruppe - Initial Unified Driver
-    - 2022-10-13 P.Johnston - Add helptext to run i2csetup script on Raspberry Pi 
-    - 2022-10-14 M.Ruppe - Explicitly set default I2C initialisation parameters for machine-class (Raspberry Pi Pico + W)
-    - 2023-01-31 L.Howell - Add minimal support for ESP32
-    - 2023-05-17 M.Ruppe - Make I2CUnifiedMachine() more flexible on initialisation. Frequency is optional.
-    - 2023-12-20 M.Taylor - added scan() function for quick userland test of connected i2c modules
-'''
 import os
 _SYSNAME = os.uname().sysname
 compat_ind = 1

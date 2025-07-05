@@ -47,17 +47,3 @@ class ws2812_array:
             dimmer_ar[i] = (g<<16) + (r<<8) + b
         self.sm.put(dimmer_ar, 8)
         time.sleep_ms(10)
-
-
-## Example
-'''neopixel = ws2812_array(1, 0)
-while True:
-    neopixel.pixels_set(0, [255,0,0])
-    neopixel.pixels_show()
-    time.sleep(0.2)
-    neopixel.pixels_set(0, [0,255,0])
-    neopixel.pixels_show()
-    time.sleep(0.2)
-    neopixel.pixels_set(0, [0,0,255])
-    neopixel.pixels_show()
-    time.sleep(0.2)'''

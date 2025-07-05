@@ -1,11 +1,10 @@
-import json
+from json import load, dumps
 from time import sleep, ticks_us, sleep_ms
 from lib.umqtt.simple import MQTTClient
-import network
+from network import WIZNET5K
 from machine import Pin, PWM, SPI
 from lib.neopixel.ws2812lib import ws2812_array
 from lib.PiicoDev.PiicoDev_RFID import PiicoDev_RFID
-import user_functions
 
 
 class config_manager:
@@ -15,7 +14,7 @@ class config_manager:
     def load_config(self, filename):
         self.filename = filename
         with open(self.filename, 'r') as json_file:
-            self.config = json.load(json_file)
+            self.config = load(json_file)
 
         self.devices = self.config["devices"]
         self.settings = self.config["settings"]
@@ -23,20 +22,13 @@ class config_manager:
     
     def save_config(self):
         with open(self.filename, 'w') as json_file:
-            json_file.write(json.dumps(self.config))
+            json_file.write(dumps(self.config))
         return 
-    
-    def import_config(self, json_input):
-        self.config = json.loads(json_input)
-        self.save_config
-    
-    def export_config(self):
-        return json.dumps(self.config)
 
 
 def connect(config):
     spi=SPI(0,2_000_000, mosi=Pin(19),miso=Pin(16),sck=Pin(18))
-    nic = network.WIZNET5K(spi,Pin(17),Pin(20)) #spi,cs,reset pin
+    nic = WIZNET5K(spi,Pin(17),Pin(20)) #spi,cs,reset pin
     nic.active(True)
 
     if not nic.isconnected():
@@ -45,19 +37,15 @@ def connect(config):
         while not nic.isconnected():
             sleep(1)
 
-    ip = nic.ifconfig()[0]
-    print(f'Connected on {ip}')
-
+    print(f'Connected to Network')
     mqtt = MQTT_handler(config)
-
     return nic, mqtt
 
 
 class MQTT_handler:
     def __init__(self, config: config_manager):
         self.config = config
-        
-        print("Connecting to MQTT Server")
+
         self.mqtt = MQTTClient(client_id = config.settings["client_name"], server = config.settings["server_addr"], port = config.settings["MQTT_port"], user = config.settings["MQTT_user"], password = config.settings["MQTT_password"])
         self.mqtt.set_callback(self.sub_cb)
         self.mqtt.connect()
@@ -65,10 +53,6 @@ class MQTT_handler:
 
 
     def sub_cb(self, topic, msg):
-        if topic.decode() == f"{config.settings["client_name"]}/config":
-            print("Updating config settings: Please wait...")
-            self.config.import_config(msg.decode())
-
         device = None
         for potential_device in self.config.devices:
             if self.config.devices[potential_device]["address"] == topic.decode():
@@ -247,16 +231,11 @@ if __name__ == "__main__":
                 if attempt == config.settings["max_ip_connect_attempts"]:
                     break
                 continue
-        
-        mqtt.pub(f"{config.settings["client_name"]}/config", config.export_config())
-        sleep(2)
-        mqtt.sub(f"{config.settings["client_name"]}/config")
 
         while net.isconnected():
             try: 
                 mqtt.pub(f"{config.settings["client_name"]}/Heartbeat", "HEARTBEAT")
                 print(config.settings["client_name"], "HEARTBEAT")
-                user_functions.custom_node_functions(config.devices)
                 process_inputs(mqtt, config)
                 process_outputs(config, neo)
                 config.save_config()
