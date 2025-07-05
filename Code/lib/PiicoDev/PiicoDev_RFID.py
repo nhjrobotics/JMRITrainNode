@@ -318,10 +318,3 @@ class PiicoDev_RFID(object):
     def tagPresent(self):
         id = self.readTagID()
         return id['success']
-    
-    # Use PiicoDev_RFID_Expansion if not Micro:bit
-#if _SYSNAME != 'microbit':
-        #try:
-            #from lib.PiicoDev.PiicoDev_RFID_Expansion import _classicSelectTag, _classicAuth, _classicStopCrypto, _writePageNtag, _classicWrite, _writeClassicRegister, _read, _readClassicData, _writeNumberToNtag, _writeNumberToClassic, writeNumber, readNumber, _writeTextToNtag, _writeTextToClassic, writeText, _readTextFromNtag, _readTextFromClassic, readText, writeURI
-        #except:
-            #print('Install PiicoDev_RFID_Expansion.py for full functionality')

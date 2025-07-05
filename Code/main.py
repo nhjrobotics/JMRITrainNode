@@ -25,6 +25,13 @@ class config_manager:
         with open(self.filename, 'w') as json_file:
             json_file.write(json.dumps(self.config))
         return 
+    
+    def import_config(self, json_input):
+        self.config = json.loads(json_input)
+        self.save_config
+    
+    def export_config(self):
+        return json.dumps(self.config)
 
 
 def connect(config):
@@ -47,7 +54,7 @@ def connect(config):
 
 
 class MQTT_handler:
-    def __init__(self, config):
+    def __init__(self, config: config_manager):
         self.config = config
         
         print("Connecting to MQTT Server")
@@ -58,6 +65,10 @@ class MQTT_handler:
 
 
     def sub_cb(self, topic, msg):
+        if topic.decode() == f"{config.settings["client_name"]}/config":
+            print("Updating config settings: Please wait...")
+            self.config.import_config(msg.decode())
+
         device = None
         for potential_device in self.config.devices:
             if self.config.devices[potential_device]["address"] == topic.decode():
@@ -233,14 +244,17 @@ if __name__ == "__main__":
                 print("Subscribed to", config.devices[device]["address"])
         except Exception as e:
                 print(f"Attempt {attempt + 1}/{config.settings["max_ip_connect_attempts"]} - Error: Connection Lost: {e}")
-                attempt += 1
                 if attempt == config.settings["max_ip_connect_attempts"]:
                     break
                 continue
-              
+        
+        mqtt.pub(f"{config.settings["client_name"]}/config", config.export_config())
+        sleep(2)
+        mqtt.sub(f"{config.settings["client_name"]}/config")
+
         while net.isconnected():
             try: 
-                mqtt.pub(config.settings["client_name"], "HEARTBEAT")
+                mqtt.pub(f"{config.settings["client_name"]}/Heartbeat", "HEARTBEAT")
                 print(config.settings["client_name"], "HEARTBEAT")
                 user_functions.custom_node_functions(config.devices)
                 process_inputs(mqtt, config)
@@ -249,3 +263,5 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Error: Input / Output Processing Failed: {e}")
                 break
+
+        attempt += 1
