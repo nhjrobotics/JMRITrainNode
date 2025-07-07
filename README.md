@@ -4,10 +4,13 @@
 # JMRITrainNode
 TrainNode is a JMRI compatible I/O controller built on the MQTT protocol. Using the Raspberry Pi Pico, each node can support up to 16 turnouts as standard, or more with user addons.
 
+## Required Hardware
+This project uses the [Wiznet Ethernet Hat](https://docs.wiznet.io/Product/Open-Source-Hardware/wiznet_ethernet_hat) for the Raspberry Pi Pico (RP2040), which is available at major retailers such as Core Electronics in Australia. This is used for networking. The Pico-W is unsupported at this time.
+
 ## Installation
-- To use TrainNode, you must have a MQTT server with username and password authentication connected to JMRI ([JMRI + MQTT](https://www.jmri.org/help/en/html/hardware/mqtt/index.shtml)), additionally you must have access to WIFI in close proximity to your layout for optimal performance. It is recommended to use Eclipse Mosquitto as your MQTT broker.
-- To install TrainNode on the Rpi Pico, install MicroPython for Pico-W ([MicroPython](https://micropython.org/download/RPI_PICO_W/)).
-- Next, configure the TrainNode [config.py](https://github.com/rewind2b4/JMRITrainNode/tree/master/Code/config.py) file (see Docs for more info). 
+- To use TrainNode, you must have a MQTT server with username and password authentication connected to JMRI ([JMRI + MQTT](https://www.jmri.org/help/en/html/hardware/mqtt/index.shtml)). It is recommended to use Eclipse Mosquitto as your MQTT broker.
+- To install TrainNode on the Rpi Pico, install MicroPython for Pico compiled from the Wiznet Github ([MicroPython](https://github.com/Wiznet/RP2040-HAT-MicroPython/releases/download/v1.0.5/rp2_w5100s_20220421_v1.0.5.uf2)).
+- Next, configure the TrainNode [config_example.json](https://github.com/rewind2b4/JMRITrainNode/tree/master/Code/config_example.json) file and rename it config.json (see Docs for more info). 
 - Finally, copy the files from the [code](https://github.com/rewind2b4/JMRITrainNode/tree/master/Code) folder to the Pico.
 - The Pico will automatically connect to the internet through the installation WIFI connection, download the required dependencies, and then restart, connecting to the layout MQTT broker through the layout WIFI connection (for layout networks that are disconnected from internet).
 
