@@ -15,42 +15,52 @@ This project uses the [Wiznet Ethernet Hat](https://docs.wiznet.io/Product/Open-
 - The Pico will automatically connect to the network, connecting to the layout MQTT broker. It will now be operational.
 
 ## Docs
-Network / MQTT Settings
-- Ssid (The WIFI connection used to access the MQTT server)
-- Password (The WIFI connection used to access the MQTT server)
-- Installation_Ssid (The WIFI connection used to access the internet for autoconfig)
-- Installation_Password (The WIFI connection used to access the internet for autoconfig)
-- Server_addr (The MQTT server address)
-- Client_name (The MQTT client name)
-- MQTT_User (The username to the MQTT server)
-- MQTT_Password (The password to the MQTT server)
-- MQTT_Port (Usually 1883)
-- MQTT_Prefix (The base topic that all JMRI topics are based on, defined in JMRI MQTT config)
+General Settings
+"server_addr": IP address of the MQTT server
+"client_name": The client name of the node
+"MQTT_user": The username of the MQTT server
+"MQTT_password": The password of the MQTT server
+"MQTT_port": The port the MQTT server is on
+"neopixel_pin": The GPIO pin that any neopixels are connected to (ignored when 0 neopixels)
+"neopixel_count": The number of neopixels attached to the node (put 0 for no neopixels)
+"device_poll_timeout_ms": The amount of time that the system waits for interupts such as button releases when pressed
+"max_ip_connect_attempts": The amount of times the node will attempt to connect before powering off (requiring a power cycle)
 
-Device Settings
-- Ramp_Rate (PWM Ramp delay per step in seconds)
-- PWM_Freq (PWM Frequency in Hz)
-- Debounce_delay (Switch debounce delay in seconds)
-- Neopixel_pin (The pin used to shift out bits to any neopixels) (None if not used)
-
-Server Configuration Settings
-- The topics used by JMRI to publish certain events to 
-- turnout_HIGH = "THROWN"
-- turnout_LOW = "CLOSED"
-- light_HIGH = "ON"
-- light_LOW = "OFF"
-- sensor_HIGH = "ACTIVE"
-- sensor_LOW = "INACTIVE"
-
-MQTT_Addresses
+Device Settings (see example_json for usage)
 - Devices to be controlled by TrainNode
-- The number of devices is not limited except by the program execution time and physical I/O limitations of the Pico-W
-- Available Device Types
-   - Servo [PWM Pin(int), Min PWM(int), Max PWM(int), Ramp Enable(bool)] (OUTPUT)
-   - Neopixel [Neopixel Index(int), Color ON([int, int, int], Color OFF[int, int, int]] (OUTPUT)
-   - LED [LED Pin(int)] (OUTPUT)
-   - Pin [Pin(int)] (OUTPUT)
-   - General_OUT [] (OUTPUT)
-   - Button_Latching [Button Pin(int), Pin State High(bool)] (INPUT)
-   - Pin_Scan [Pin(int), Pin State High(bool)] (INPUT)
-   - General_IN [] (INPUT)
+- The number of devices is not limited except by the program execution time and physical limitations of the Pico (I/O, RAM, etc).
+- Additional data can be added, this will be ignored by the system unless used in the user program space.
+
+The device settings looks as follows:
+
+"address": "jmri/track/turnout/4",
+"current_state": {
+      "state": "CLOSED",
+      "position": 0
+},
+"states": {
+      "THROWN": [255, 0, 0],
+      "CLOSED": [0, 255, 0]
+},
+"io": "OUTPUT",
+"type": "neopixel",
+"args": {
+}
+
+Where,
+"address": "jmri/track/turnout/4",
+"current_state": wrapper for "state" and "position" (Do not modify)
+"state": The current state of the device (this is updated in real time), eg. "THROWN"
+"position": The current position of the device (this is updated in real time), eg. [255, 0, 0]
+"states": The messages that JMRI will send and the response position, eg. "THROWN": [255, 0, 0], "CLOSED": [0, 255, 0]
+"io": Whether the device is an INPUT or an OUTPUT
+"type": The device type (see list below)
+"args": Any other arguments required by the device (see arguments in list below)
+
+Available Device Types
+   - servo ["freq": Frequency of the servo, "pin": Output GPIO pin, "ramp": true or false for whether the servo will ramp to its final position, "step": The size of the step for the ramp per cycle] (OUTPUT)
+   - neopixel ["pixel": the output pixel] (OUTPUT)
+   - pin_output ["pin": GPIO pin] (OUTPUT)
+   - rfid ["bus": The bus for the SPI interface, "sda": The SDA pin, "scl": The SCL pin, "asw_address": the switch address on the piicodev RFID] (INPUT)
+   - button ["pin": GPIO pin, "pullup": true or false for pullup, "debounce": The debounce time in milliseconds, "button_trig": Whether the button is normally closed or normally open] (INPUT)
+   - pin_input ["pin": GPIO pin, "pullup": true or false for pullup, "debounce": The debounce time in milliseconds] (INPUT)
